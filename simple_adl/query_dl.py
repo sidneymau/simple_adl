@@ -56,15 +56,15 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--profile',type=str,required=False,
-                        help='Profile for data lab query [str].')
+                        help='Profile for data lab query [str]')
     parser.add_argument('--ra',type=float,required=True,
-                        help='Right Ascension of target position [deg].')
+                        help='Right Ascension of target position [deg]')
     parser.add_argument('--dec',type=float,required=True,
-                        help='Declination of target position [deg].')
-    parser.add_argument('--radius',type=float, default=1.0,
-                        help='Radius around target position [deg].')
-    parser.add_argument('--gmax',type=float, default=23.5,
-                        help='Maximum g-band magnitude [mag].')
+                        help='Declination of target position [deg]')
+    parser.add_argument('--radius',type=float,default=1.0,
+                        help='Radius around target position [deg]')
+    parser.add_argument('--gmax',type=float,default=23.5,
+                        help='Maximum g-band magnitude [mag]')
     args = parser.parse_args()
     data = query(args.profile, args.ra, args.dec, args.radius, args.gmax)
     import pdb;pdb.set_trace()

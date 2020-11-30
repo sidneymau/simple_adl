@@ -28,15 +28,15 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--config',type=str,required=False,default='config.yaml',
-                        help='Config file [.yaml].')
+                        help='Config file [.yaml]')
     parser.add_argument('--outfile',type=str,required=False,default='out.png',
                         help='Output file [.png/.pdf]')
     parser.add_argument('--ra',type=float,required=True,
-                        help='Right Ascension of target position [deg].')
+                        help='Right Ascension of target position [deg]')
     parser.add_argument('--dec',type=float,required=True,
-                        help='Declination of target position [deg].')
+                        help='Declination of target position [deg]')
     parser.add_argument('--mod',type=float,required=False,
-                        help='Distance modulus [mag].')
+                        help='Distance modulus [mag]')
     args = parser.parse_args()
 
     with open(args.config, 'r') as ymlfile:

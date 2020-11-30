@@ -32,7 +32,7 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--config',type=str,required=False,default='config.yaml',
-                        help='config file')
+                        help='config file [.yaml]')
     args = parser.parse_args()
 
     with open(args.config, 'r') as ymlfile:
