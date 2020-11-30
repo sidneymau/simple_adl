@@ -21,3 +21,13 @@ This will create a conda environment called `simple_adl` that includes all of th
 
 Run `init_simple.py` to generate a default `config.yaml` configuration file.
 This can be edited as needed; in particular, you may want to change the `profile` entry.
+
+To search for (DELVE 2)[https://arxiv.org/abs/2009.08550], run the following:
+```
+python search.py --ra 28.77 --dec -68.25 
+```
+
+To plot DELVE 2, run
+```
+python plot_hotspot.py --ra 28.77 --dec -68.25 --mod 19.26
+```
