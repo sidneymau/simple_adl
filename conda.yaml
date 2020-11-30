@@ -1,0 +1,14 @@
+name: simple_adl
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - astropy
+  - healpy
+  - matplotlib
+  - numpy
+  - pip
+  - pyyaml
+  - scipy
+  - pip:
+    - noaodatalab
