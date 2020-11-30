@@ -45,21 +45,6 @@ if __name__ == "__main__":
     data = np.asarray(results)
     #data = data[np.unique([data[i][-1] for i in range(len(data))], return_index=True)[1]]
     
-    ## Create fits columns
-    #c0 = fits.Column(name='SIG',          format='E', array=data[:,0])
-    #c1 = fits.Column(name=basis_1,        format='E', array=data[:,1])
-    #c2 = fits.Column(name=basis_2,        format='E', array=data[:,2])
-    #c3 = fits.Column(name='MODULUS',      format='E', array=data[:,3])
-    #c4 = fits.Column(name='R',            format='E', array=data[:,4])
-    #c5 = fits.Column(name='N_OBS',        format='E', array=data[:,5])
-    #c6 = fits.Column(name='N_OBS_HALF',   format='E', array=data[:,6])
-    #c7 = fits.Column(name='N_MODEL',      format='E', array=data[:,7])
-    #c8 = fits.Column(name='MC_SOURCE_ID', format='E', array=data[:,8])
-    #
-    ## Write fits output
-    #t = fits.BinTableHDU.from_columns([c0, c1, c2, c3, c4, c5, c6, c7, c8])
-    #t.writeto(candidate_list, overwrite=True)
-
     f = open(outfile, 'w')
     np.savetxt(f, data, delimiter=',', header='SIG,{},{},MODULUS,R,N_OBS,N_OBS_HALF,N_MODEL,MC_SOURCE_ID'.format(basis_1,basis_2))
     f.close()
