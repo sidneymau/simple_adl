@@ -60,6 +60,6 @@ if __name__ == "__main__":
     #t = fits.BinTableHDU.from_columns([c0, c1, c2, c3, c4, c5, c6, c7, c8])
     #t.writeto(candidate_list, overwrite=True)
 
-    f = open(outfile, 'ab')
+    f = open(outfile, 'w')
     np.savetxt(f, data, delimiter=',', header='SIG,{},{},MODULUS,R,N_OBS,N_OBS_HALF,N_MODEL,MC_SOURCE_ID'.format(basis_1,basis_2))
     f.close()
