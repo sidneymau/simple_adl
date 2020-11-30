@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     # Parse results from results_dir into a list of values
     results = []
-    for file in glob.glob('{}/*.txt'.format(cfg['output']['results_dir'])):
+    for file in glob.glob('{}/*.csv'.format(cfg['output']['results_dir'])):
         with open(file, 'r') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
