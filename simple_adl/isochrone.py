@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 """
-Generic python script.
-
 This module is an attempt to port over a small amount of the ugali isochrone functionality
 to a smaller piece of code with fewer dependencies.
 See https://github.com/DarkEnergySurvey/ugali/blob/master/ugali/isochrone/model.py
