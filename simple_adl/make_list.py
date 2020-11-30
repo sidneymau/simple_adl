@@ -16,9 +16,9 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--config',type=str,required=False,default='config.yaml',
-                        help='Config file [.yaml].')
+                        help='Config file [.yaml]')
     parser.add_argument('--outfile',type=str,required=False,
-                        help='Output file [.csv].')
+                        help='Output file [.csv]')
     args = parser.parse_args()
 
     with open(args.config, 'r') as ymlfile:
