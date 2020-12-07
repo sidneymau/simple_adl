@@ -102,15 +102,13 @@ class Region():
         data = simple_adl.query_dl.query(self.survey.catalog['profile'], self.ra, self.dec, radius=3.0, gmax=self.survey.catalog['mag_max'])
         self.data = data
 
-    def characteristic_density(self, data):
+    def characteristic_density(self, iso_sel):
         """
         Compute the characteristic density of a region
         Convlve the field and find overdensity peaks
         """
 
-        cut_magnitude_threshold = (data[self.survey.mag_1] < self.survey.catalog['mag_max'])
-    
-        x, y = self.proj.sphereToImage(data[self.survey.catalog['basis_1']][cut_magnitude_threshold], data[self.survey.catalog['basis_2']][cut_magnitude_threshold]) # Trimmed magnitude range for hotspot finding
+        x, y = self.proj.sphereToImage(self.data[self.survey.catalog['basis_1']][iso_sel], self.data[self.survey.catalog['basis_2']][iso_sel]) # Trimmed magnitude range for hotspot finding
         #x_full, y_full = proj.sphereToImage(data[basis_1], data[basis_2]) # If we want to use full magnitude range for significance evaluation
         delta_x = 0.01
         area = delta_x**2
@@ -148,7 +146,10 @@ class Region():
             nside_fracdet = hp.npix2nside(len(self.fracdet))
             
             subpix_region_array = []
-            for pix in np.unique(hp.ang2pix(self.nside, data[self.survey.catalog['basis_1']], data[self.survey.catalog['basis_2']], lonlat=True)):
+            for pix in np.unique(hp.ang2pix(self.nside,
+                                            self.data[self.survey.catalog['basis_1']][iso_sel],
+                                            self.data[self.survey.catalog['basis_2']][iso_sel],
+                                            lonlat=True)):
                 subpix_region_array.append(subpixel(self.pix_center, self.nside, nside_fracdet))
             subpix_region_array = np.concatenate(subpix_region_array)
     
@@ -163,16 +164,15 @@ class Region():
     
         return(characteristic_density)
     
-    def characteristic_density_local(self, data, x_peak, y_peak, angsep_peak):
+    def characteristic_density_local(self, iso_sel, x_peak, y_peak, angsep_peak):
         """
         Compute the local characteristic density of a region
         """
     
-        cut_magnitude_threshold = (data[self.survey.mag_1] < self.survey.catalog['mag_max'])
-
-        characteristic_density = self.characteristic_density(data)
+        #characteristic_density = self.characteristic_density(iso_sel)
+        characteristic_density = self.density
     
-        x, y = self.proj.sphereToImage(data[self.survey.catalog['basis_1']][cut_magnitude_threshold], data[self.survey.catalog['basis_2']][cut_magnitude_threshold]) # Trimmed magnitude range for hotspot finding
+        x, y = self.proj.sphereToImage(self.data[self.survey.catalog['basis_1']][iso_sel], self.data[self.survey.catalog['basis_2']][iso_sel]) # Trimmed magnitude range for hotspot finding
         #x_full, y_full = proj.sphereToImage(data[basis_1], data[basis_2]) # If we want to use full magnitude range for significance evaluation
     
         # If fracdet map is available, use that information to either compute local density,
@@ -186,7 +186,10 @@ class Region():
             nside_fracdet = hp.npix2nside(len(self.fracdet))
             
             subpix_region_array = []
-            for pix in np.unique(hp.ang2pix(self.nside, data[self.survey.catalog['basis_1']], data[self.survey.catalog['basis_2']], lonlat=True)):
+            for pix in np.unique(hp.ang2pix(self.nside,
+                                            self.data[self.survey.catalog['basis_1']][iso_sel],
+                                            self.data[self.survey.catalog['basis_2']][iso_sel],
+                                            lonlat=True)):
                 subpix_region_array.append(subpixel(self.pix_center, self.nside, nside_fracdet))
             subpix_region_array = np.concatenate(subpix_region_array)
     
@@ -196,8 +199,8 @@ class Region():
     
             subpix_region_array = subpix_region_array[self.fracdet[subpix_region_array] > 0.99]
             subpix = hp.ang2pix(nside_fracdet, 
-                                data[self.survey.catalog['basis_1']][cut_magnitude_threshold], 
-                                data[self.survey.catalog['basis_2']][cut_magnitude_threshold],
+                                self.data[self.survey.catalog['basis_1']][cut_magnitude_threshold][iso_sel], 
+                                self.data[self.survey.catalog['basis_2']][cut_magnitude_threshold][iso_sel],
                                 lonlat=True)
     
             # This is where the local computation begins
@@ -240,22 +243,21 @@ class Region():
     
         return(characteristic_density_local)
 
-    def find_peaks(self, data, distance_modulus):
+    def find_peaks(self, iso_sel):
         """
         Convolve field to find characteristic density and peaks within the selected pixel
         """
 
-        # convolve field and find peaks
-        cut_magnitude_threshold = (data[self.survey.mag_1] < self.survey.catalog['mag_max'])
-
-        characteristic_density = self.characteristic_density(data)
+        #characteristic_density = self.characteristic_density(iso_sel)
+        characteristic_density = self.density
     
-        x, y = self.proj.sphereToImage(data[self.survey.catalog['basis_1']][cut_magnitude_threshold], data[self.survey.catalog['basis_2']][cut_magnitude_threshold]) # Trimmed magnitude range for hotspot finding
+        x, y = self.proj.sphereToImage(self.data[self.survey.catalog['basis_1']][iso_sel], self.data[self.survey.catalog['basis_2']][iso_sel]) # Trimmed magnitude range for hotspot finding
         #x_full, y_full = proj.sphereToImage(data[basis_1], data[basis_2]) # If we want to use full magnitude range for significance evaluation
         delta_x = 0.01
         area = delta_x**2
         smoothing = 2. / 60. # Was 3 arcmin
         bins = np.arange(-8., 8. + 1.e-10, delta_x)
+        #bins = np.arange(-4., 4. + 1.e-10, delta_x) # SM: not sure what to prefer here...
         centers = 0.5 * (bins[0: -1] + bins[1:])
         yy, xx = np.meshgrid(centers, centers)
     
@@ -263,11 +265,14 @@ class Region():
         
         h_g = scipy.ndimage.filters.gaussian_filter(h, smoothing / delta_x)
     
+        # SM: If we can speed up this block that would be great
         factor_array = np.arange(1., 5., 0.05)
         rara, decdec = self.proj.imageToSphere(xx.flatten(), yy.flatten())
         cutcut = (hp.ang2pix(self.nside, rara, decdec, lonlat=True) == self.pix_center).reshape(xx.shape)
         threshold_density = 5 * characteristic_density * area
         for factor in factor_array:
+            # This is reducing the contrast against the background through the arbitrary measurement 'factor'
+            # until there are fewer than 10 disconnected peaks
             h_region, n_region = scipy.ndimage.measurements.label((h_g * cutcut) > (area * characteristic_density * factor))
             #print 'factor', factor, n_region, n_region < 10
             if n_region < 10:
@@ -275,19 +280,26 @@ class Region():
                 break
     
         h_region, n_region = scipy.ndimage.measurements.label((h_g * cutcut) > threshold_density)
-        h_region = np.ma.array(h_region, mask=(h_region < 1))
+        #h_region = np.ma.array(h_region, mask=(h_region < 1))
     
         x_peak_array = []
         y_peak_array = []
         angsep_peak_array = []
     
         for index in range(1, n_region + 1): # loop over peaks
-            index_peak = np.argmax(h_g * (h_region == index))
+            #index_peak = np.argmax(h_g * (h_region == index))
+            index_peak = np.ravel_multi_index(scipy.ndimage.maximum_position(input=h_g, labels=h_region, index=index), h_g.shape)
             x_peak, y_peak = xx.flatten()[index_peak], yy.flatten()[index_peak]
             #print index, np.max(h_g * (h_region == index))
+
+            # SM: Could these numbers be useful?
+            #index_max = scipy.ndimage.maximum(input=h_g, labels=h_region, index=index)
+            #index_stddev = scipy.ndimage.standard_deviation(input=h_g, labels=h_region, index=index)
+            #print('max: {}'.format(index_max))
+            #print('stddev: {}'.format(index_stddev))
             
             #angsep_peak = np.sqrt((x_full - x_peak)**2 + (y_full - y_peak)**2) # Use full magnitude range, NOT TESTED!!!
-            angsep_peak = np.sqrt((x-x_peak)**2 + (y-y_peak)**2) # Impose magnitude threshold
+            angsep_peak = np.sqrt((x-x_peak)**2 + (y-y_peak)**2)
     
             x_peak_array.append(x_peak)
             y_peak_array.append(y_peak)
@@ -295,36 +307,38 @@ class Region():
         
         return x_peak_array, y_peak_array, angsep_peak_array
     
-    def fit_aperture(self, data, distance_modulus, x_peak, y_peak, angsep_peak):
+    def fit_aperture(self, iso_sel, x_peak, y_peak, angsep_peak):
         """
         Fit aperture by varing radius and computing the significance
         """
 
-        characteristic_density_local = self.characteristic_density_local(data, x_peak, y_peak, angsep_peak)
+        characteristic_density_local = self.characteristic_density_local(iso_sel, x_peak, y_peak, angsep_peak)
     
         ra_peak_array = []
         dec_peak_array = []
         r_peak_array = []
         sig_peak_array = []
-        distance_modulus_array = []
         n_obs_peak_array = []
         n_obs_half_peak_array = []
         n_model_peak_array = []
     
         size_array = np.arange(0.01, 0.3, 0.01)
-        sig_array = np.tile(0., len(size_array))
+        sig_array = np.zeros(len(size_array))
         
         size_array_zero = np.concatenate([[0.], size_array])
         area_array = np.pi * (size_array_zero[1:]**2 - size_array_zero[0:-1]**2)
     
-        n_obs_array = np.tile(0, len(size_array))
-        n_model_array = np.tile(0., len(size_array))
-        for ii in range(0, len(size_array)):
-            n_obs = np.sum(angsep_peak < size_array[ii])
-            n_model = characteristic_density_local * (np.pi * size_array[ii]**2)
-            sig_array[ii] = np.clip(scipy.stats.norm.isf(scipy.stats.poisson.sf(n_obs, n_model)), 0., 37.5) # Clip at 37.5
-            n_obs_array[ii] = n_obs
-            n_model_array[ii] = n_model
+        #n_obs_array = np.zeros(len(size_array))
+        #n_model_array = np.zeros(len(size_array))
+        #for ii in range(0, len(size_array)):
+        #    n_obs = np.sum(angsep_peak < size_array[ii])
+        #    n_model = characteristic_density_local * (np.pi * size_array[ii]**2)
+        #    sig_array[ii] = np.clip(scipy.stats.norm.isf(scipy.stats.poisson.sf(n_obs, n_model)), 0., 37.5) # Clip at 37.5
+        #    n_obs_array[ii] = n_obs
+        #    n_model_array[ii] = n_model
+        n_obs_array = np.array([np.sum(angsep_peak < size) for size in size_array])
+        n_model_array = np.array([characteristic_density_local * (np.pi * size**2) for size in size_array])
+        sig_array = np.array([np.clip(scipy.stats.norm.isf(scipy.stats.poisson.sf(n_obs, n_model)), 0., 37.5) for (n_obs,n_model) in zip(n_obs_array,n_model_array)])
     
         ra_peak, dec_peak = self.proj.imageToSphere(x_peak, y_peak)
     
@@ -336,16 +350,15 @@ class Region():
         n_model_peak = n_model_array[index_peak]
         n_obs_half_peak = np.sum(angsep_peak < (0.5 * r_peak))
     
-        # Compile resilts
+        # Compile results
         print('Candidate: x_peak: {:12.3f}, y_peak: {:12.3f}, r_peak: {:12.3f}, sig: {:12.3f}, ra_peak: {:12.3f}, dec_peak: {:12.3f}'.format(x_peak, y_peak, r_peak, np.max(sig_array), ra_peak, dec_peak))
         ra_peak_array.append(ra_peak)
         dec_peak_array.append(dec_peak)
         r_peak_array.append(r_peak)
         #sig_peak_array.append(np.max(sig_array))
         sig_peak_array.append(sig_array[index_peak])
-        distance_modulus_array.append(distance_modulus)
         n_obs_peak_array.append(n_obs_peak)
         n_obs_half_peak_array.append(n_obs_half_peak)
         n_model_peak_array.append(n_model_peak)
     
-        return ra_peak_array, dec_peak_array, r_peak_array, sig_peak_array, distance_modulus_array, n_obs_peak_array, n_obs_half_peak_array, n_model_peak_array
+        return ra_peak_array, dec_peak_array, r_peak_array, sig_peak_array, n_obs_peak_array, n_obs_half_peak_array, n_model_peak_array

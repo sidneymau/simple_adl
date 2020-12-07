@@ -98,7 +98,7 @@ def write_output(results_dir, nside, pix_nside_select, ra_peak_array, dec_peak_a
     np.savetxt(f, arr, delimiter=',')
     f.close()
 
-def search_by_distance(survey, region, distance_modulus):
+def search_by_distance(survey, region, distance_modulus, iso_sel):
     """
     Idea: 
     Send a data extension that goes to faint magnitudes, e.g., g < 24.
@@ -108,21 +108,11 @@ def search_by_distance(survey, region, distance_modulus):
     around each individual hotspot, e.g., radius 0.3 to 0.5 deg.
     """
 
-    print('Distance = {:0.1f} kpc (m-M = {:0.1f})'.format(distanceModulusToDistance(distance_modulus), distance_modulus))
+    #print('Distance = {:0.1f} kpc (m-M = {:0.1f})'.format(distanceModulusToDistance(distance_modulus), distance_modulus))
 
-    iso = simple_adl.isochrone.Isochrone(survey=survey.isochrone['survey'],
-                              band_1=survey.band_1.lower(),
-                              band_2=survey.band_2.lower(),
-                              age=12.0, #survey.isochrone['age'],
-                              metallicity=0.00010, #survey.isochrone['metallicity'],
-                              distance_modulus=distance_modulus)
+    #print('{} objects left after isochrone cut...'.format(len(data)))
 
-    cut = cut_isochrone_path(region.data[survey.mag_dered_1], region.data[survey.mag_dered_2], region.data[survey.mag_err_1], region.data[survey.mag_err_2], iso, survey.catalog['mag_max'], radius=0.1)
-    data = region.data[cut]
-
-    print('{} objects left after isochrone cut...'.format(len(data)))
-
-    if (len(data) == 0):
+    if (len(region.data[iso_sel]) == 0):
         return [], [], [], [], [], [], [], []
 
     ra_peak_array = []
@@ -134,19 +124,19 @@ def search_by_distance(survey, region, distance_modulus):
     n_obs_half_peak_array = []
     n_model_peak_array = []
 
-    x_peak_array, y_peak_array, angsep_peak_array = region.find_peaks(data, distance_modulus)
+    region.density = region.characteristic_density(iso_sel)
+    x_peak_array, y_peak_array, angsep_peak_array = region.find_peaks(iso_sel)
 
     for x_peak, y_peak, angsep_peak in zip(x_peak_array, y_peak_array, angsep_peak_array):
-        characteristic_density_local = region.characteristic_density_local(data, x_peak, y_peak, angsep_peak)
         # Aperture fitting
         print('Fitting aperture to hotspot...')
-        ra_peaks, dec_peaks, r_peaks, sig_peaks, distance_moduli, n_obs_peaks, n_obs_half_peaks, n_model_peaks = region.fit_aperture(data, distance_modulus, x_peak, y_peak, angsep_peak)
+        ra_peaks, dec_peaks, r_peaks, sig_peaks, n_obs_peaks, n_obs_half_peaks, n_model_peaks = region.fit_aperture(iso_sel, x_peak, y_peak, angsep_peak)
         
         ra_peak_array.append(ra_peaks)
         dec_peak_array.append(dec_peaks)
         r_peak_array.append(r_peaks)
         sig_peak_array.append(sig_peaks)
-        distance_modulus_array.append(distance_moduli)
+        distance_modulus_array.append(distance_modulus*np.ones(len(ra_peaks)))
         n_obs_peak_array.append(n_obs_peaks)
         n_obs_half_peak_array.append(n_obs_half_peaks)
         n_model_peak_array.append(n_model_peaks)
@@ -199,28 +189,32 @@ if __name__ == '__main__':
 
     distance_modulus_search_array = np.arange(16., survey.catalog['mag_max'], 0.5)
 
-    ra_peak_array = []
-    dec_peak_array = [] 
-    r_peak_array = []
-    sig_peak_array = []
-    distance_modulus_array = []
-    mc_source_id_array = []
-    n_obs_peak_array = []
-    n_obs_half_peak_array = []
-    n_model_peak_array = []
+    #results = [np.empty((1,9)) for distance_modulus in distance_modulus_search_array]
+
+    iso_search_array = [simple_adl.isochrone.Isochrone(survey=survey.isochrone['survey'],
+                                                       band_1=survey.band_1.lower(),
+                                                       band_2=survey.band_2.lower(),
+                                                       age=12.0, #survey.isochrone['age'],
+                                                       metallicity=0.00010, #survey.isochrone['metallicity'],
+                                                       distance_modulus=distance_modulus)
+                        for distance_modulus in distance_modulus_search_array]
+
+    iso_selection_array = [cut_isochrone_path(region.data[survey.mag_dered_1], 
+                                              region.data[survey.mag_dered_2],
+                                              region.data[survey.mag_err_1],
+                                              region.data[survey.mag_err_2],
+                                              iso,
+                                              survey.catalog['mag_max'],
+                                              radius=0.1)
+                           for iso in iso_search_array]
+
+    #data_array = [region.data[iso_sel] for iso_sel in iso_selection_array]
     
-    for distance_modulus in distance_modulus_search_array:
-        ra_peaks, dec_peaks, r_peaks, sig_peaks, dist_moduli, n_obs_peaks, n_obs_half_peaks, n_model_peaks = search_by_distance(survey, region, distance_modulus)
-        ra_peak_array.append(ra_peaks)
-        dec_peak_array.append(dec_peaks)
-        r_peak_array.append(r_peaks)
-        sig_peak_array.append(sig_peaks)
-        distance_modulus_array.append(dist_moduli)
-        n_obs_peak_array.append(n_obs_peaks)
-        n_obs_half_peak_array.append(n_obs_half_peaks)
-        n_model_peak_array.append(n_model_peaks)
-        mc_source_id_array.append(np.tile(0, len(sig_peaks)))
-    
+    #ra_peak_array, dec_peak_array, r_peak_array, sig_peak_array, n_obs_array, n_obs_half_array, n_model_array = [search_by_distance(survey, region, data) for data in data_array]
+
+    results = [search_by_distance(survey, region, distance_modulus, iso_sel) for (distance_modulus,iso_sel) in zip(distance_modulus_search_array,iso_selection_array)]
+    ra_peak_array, dec_peak_array, r_peak_array, sig_peak_array, distance_modulus_array, n_obs_peak_array, n_obs_half_peak_array, n_model_peak_array = np.array(results).T
+
     ra_peak_array = np.concatenate(ra_peak_array)
     dec_peak_array = np.concatenate(dec_peak_array)
     r_peak_array = np.concatenate(r_peak_array)
@@ -229,7 +223,8 @@ if __name__ == '__main__':
     n_obs_peak_array = np.concatenate(n_obs_peak_array)
     n_obs_half_peak_array = np.concatenate(n_obs_half_peak_array)
     n_model_peak_array = np.concatenate(n_model_peak_array)
-    mc_source_id_array = np.concatenate(mc_source_id_array)
+
+    mc_source_id_array = np.zeros(len(distance_modulus_array))
     
     # Sort peaks according to significance
     index_sort = np.argsort(sig_peak_array)[::-1]
