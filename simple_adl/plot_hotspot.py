@@ -5,6 +5,7 @@ Generic python script.
 __author__ = "Sid Mau"
 
 # Python libraries
+import os
 import yaml
 import numpy as np
 import healpy as hp
@@ -203,5 +204,5 @@ if __name__ == '__main__':
     
     #fig.savefig('./{}.pdf'.format(name), bbox_inches='tight')
     #file_name = 'candidate_{:0.2f}_{:0.2f}'.format(args.ra, args.dec)
-    fig.savefig(args.outfile, bbox_inches='tight')
+    fig.savefig(os.path.join(survey.output['save_dir'],args.outfile), bbox_inches='tight')
     plt.close(fig)
