@@ -7,7 +7,7 @@ Clone this repository to the machine you wish to run the code from.
 
 Run the following command (consider adding to your `.bashrc`/`.zshrc`/etc.):
 ```
-export PYTHONPATH=<path to simple_adl>/simple_adl:$PYTHONPATH
+export PYTHONPATH=<path to simple_adl>:$PYTHONPATH
 ```
 where `<path to simple_adl>` is the path to the repository.
 
