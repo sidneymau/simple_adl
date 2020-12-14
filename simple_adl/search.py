@@ -161,11 +161,24 @@ if __name__ == '__main__':
                         help='Config file [.yaml]')
     parser.add_argument('--outfile',type=str,required=False,default='out.csv',
                         help='Output file [.csv]')
-    parser.add_argument('--ra',type=float,required=True,
+    parser.add_argument('--ra',type=float,required=False,
                         help='Right Ascension of target position [deg]')
-    parser.add_argument('--dec',type=float,required=True,
+    parser.add_argument('--dec',type=float,required=False,
                         help='Declination of target position [deg]')
+    parser.add_argument('--nside',type=int,required=False,
+                        help='Nside of HEALPix pixelization [int]')
+    parser.add_argument('--id',type=int,required=False,
+                        help='HEALPix ID [int]')
     args = parser.parse_args()
+
+    if args.ra and args.dec:
+        if args.nside or args.id:
+            parser.error('Please specify either (ra, dec) or (nside, id).')
+    elif args.nside and args.id:
+        if args.ra and args.dec:
+            parser.error('Please specify either (ra, dec) or (nside, id).')
+    else:
+        parser.error('Please specify either (ra, dec) or (nside, id).')
 
     with open(args.config, 'r') as ymlfile:
         cfg = yaml.load(ymlfile, Loader=yaml.SafeLoader)
