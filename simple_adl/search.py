@@ -167,18 +167,20 @@ if __name__ == '__main__':
                         help='Declination of target position [deg]')
     parser.add_argument('--nside',type=int,required=False,
                         help='Nside of HEALPix pixelization [int]')
-    parser.add_argument('--id',type=int,required=False,
-                        help='HEALPix ID [int]')
+    parser.add_argument('--ipix',type=int,required=False,
+                        help='Pixel index [int]')
     args = parser.parse_args()
 
     if args.ra and args.dec:
-        if args.nside or args.id:
-            parser.error('Please specify either (ra, dec) or (nside, id).')
-    elif args.nside and args.id:
+        if args.nside or args.ipix:
+            parser.error('Please specify either (ra, dec) or (nside, ipix).')
+        ra, dec = args.ra, args.dec
+    elif args.nside and args.ipix:
         if args.ra and args.dec:
-            parser.error('Please specify either (ra, dec) or (nside, id).')
+            parser.error('Please specify either (ra, dec) or (nside, ipix).')
+        ra, dec = hp.pix2ang(nside=args.nside, ipix=args.ipix, lonlat=True)
     else:
-        parser.error('Please specify either (ra, dec) or (nside, id).')
+        parser.error('Please specify either (ra, dec) or (nside, ipix).')
 
     with open(args.config, 'r') as ymlfile:
         cfg = yaml.load(ymlfile, Loader=yaml.SafeLoader)
@@ -186,7 +188,7 @@ if __name__ == '__main__':
 
     #---------------------------------------------------------------------------
 
-    region = simple_adl.survey.Region(survey, args.ra, args.dec)
+    region = simple_adl.survey.Region(survey, ra, dec)
     print('Search coordinates: (RA, Dec) = ({:0.2f}, {:0.2f})'.format(region.ra, region.dec))
     print('Search healpixel: {} (nside = {})'.format(region.pix_center, region.nside))
 
