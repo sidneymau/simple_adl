@@ -27,9 +27,6 @@ def get_cat_dir():
     return catdir
 
 
-
-
-
 class ExternalCatalog(object):
     DATADIR=get_cat_dir()
  
@@ -41,8 +38,6 @@ class ExternalCatalog(object):
                    ('glat',float)]
         self.data = np.recarray(0,dtype=columns)
         self._load(filename)
-        if np.isnan([self.data['glon'],self.data['glat']]).any():
-            raise ValueError("Incompatible values")
  
     def __getitem__(self, key):
         """ 
@@ -69,7 +64,7 @@ class ExternalCatalog(object):
     def _load(self,filename):
         pass
  
-    def match(self,lon,lat,coord='gal',tol=0.1,nnearest=1):
+    def match(self,lon,lat,coord='gal',tol=0.3,nnearest=1):
         if coord.lower() == 'cel':
             glon, glat = cel2gal(lon,lat)
         else:
