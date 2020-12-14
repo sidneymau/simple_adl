@@ -26,6 +26,10 @@ To search for [DELVE 2](https://arxiv.org/abs/2009.08550), run the following:
 ```
 python search.py --ra 28.77 --dec -68.25 
 ```
+or
+```
+python search.py --nside 32 --ipix 11812
+```
 
 To plot DELVE 2, run
 ```
