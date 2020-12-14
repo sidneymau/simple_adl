@@ -9,3 +9,17 @@ import astropy
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 #-------------------------------------------------------------------------------
+
+
+def get_cat_dir():
+    catdir = './external_catalogs'
+    if not os.path.exists(catdir):
+        msg = "Catalog directory not found:\n%s"%catdir
+
+    return catdir
+
+
+
+
+Class ExternalCatalog(object): 
+  
