@@ -9,7 +9,7 @@ Run the following command (consider adding to your `.bashrc`/`.zshrc`/etc.):
 ```
 export PYTHONPATH=<path to simple_adl>:$PYTHONPATH
 ```
-where `<path to simple_adl>` is the path to the repository.
+where `<path to simple_adl>` is the path to the inner simple_adl repository (ie, the full string should end with `*/simple_adl:$PYTHONPATH`).
 
 Create the conda environment with
 ```
