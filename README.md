@@ -1,5 +1,5 @@
 # simple_adl
-A new version of the simple binner dwarf galaxy search algorithm ([`simple`](https://github.com/DarkEnergySurvey/simple)) intended for use with data pulled directly from the Astro Data Lab.
+A new version of the simple binner dwarf galaxy search algorithm ([`simple`](https://github.com/DarkEnergySurvey/simple)) intended for use with data pulled directly from the Astro Data Lab. 
 
 ## Installation
 
@@ -18,6 +18,8 @@ conda env create -f conda.yaml
 This will create a conda environment called `simple_adl` that includes all of the necessary software.
 
 ## Use
+
+Activate the conda environment through `conda activate simple_adl`. Note that this needs to be done from a directory that does not have a `simple_adl` folder.
 
 Run `init_simple.py` to generate a default `config.yaml` configuration file.
 This can be edited as needed; in particular, you may want to change the `profile` entry.
