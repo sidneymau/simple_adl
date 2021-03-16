@@ -49,13 +49,16 @@ if __name__ == '__main__':
     region = simple_adl.survey.Region(survey, args.ra, args.dec)
     print('Plot coordinates: (RA, Dec) = ({:0.2f}, {:0.2f})'.format(region.ra, region.dec))
 
-    region.load_data()
+    region.load_data(stars=True, galaxies=True)
     print('Found {} objects'.format(len(region.data)))
     if (len(region.data) == 0):
         print('Ending search.')
         exit()
 
-    data = region.data
+    stars = region.data[0]
+    galaxies = region.data[1]
+
+    data = stars
 
     #---------------------------------------------------------------------------
 
@@ -71,7 +74,8 @@ if __name__ == '__main__':
     
     # projection of image
     proj = region.proj
-    x, y = proj.sphereToImage(data[survey.catalog['basis_1']], data[survey.catalog['basis_2']])
+    x_stars, y_stars = proj.sphereToImage(data[survey.catalog['basis_1']], data[survey.catalog['basis_2']])
+    x_galaxies, y_galaxies = proj.sphereToImage(galaxies[survey.catalog['basis_1']], galaxies[survey.catalog['basis_2']])
 
     # hess
     mag = data[survey.mag_dered_1]
@@ -89,7 +93,7 @@ if __name__ == '__main__':
 
     #---------------------------------------------------------------------------
 
-    fig, axs = plt.subplots(1, 2, figsize=(11, 4))
+    fig, axs = plt.subplots(1, 3, figsize=(16, 4))
     fig.subplots_adjust(wspace=0.5)
 
     #---------------------------------------------------------------------------
@@ -101,7 +105,7 @@ if __name__ == '__main__':
     bound = 0.5
     steps = 100
     bins = np.linspace(-bound, bound, steps)
-    signal = np.histogram2d(x[iso_filter], y[iso_filter], bins=[bins, bins])[0]
+    signal = np.histogram2d(x_stars[iso_filter], y_stars[iso_filter], bins=[bins, bins])[0]
     sigma = 0.01 * (0.25 * np.arctan(0.25 * r0 * 60. - 1.5) + 1.3)
     convolution = scipy.ndimage.filters.gaussian_filter(signal, sigma/(bound/steps)).T
     pc = ax.pcolormesh(bins, bins, convolution, cmap='Greys', rasterized=True)
@@ -132,46 +136,46 @@ if __name__ == '__main__':
 
     #---------------------------------------------------------------------------
     
-    ## Galactic histogram
-    #ax = axs[1]
-    #plt.sca(ax)
-    #
-    #bound = 0.5
-    #steps = 100
-    #bins = np.linspace(-bound, bound, steps)
-    #signal = np.histogram2d(x[galaxies & iso_filter], y[galaxies & iso_filter], bins=[bins, bins])[0]
-    #sigma = 0.01 * (0.25 * np.arctan(0.25 * r0 * 60. - 1.5) + 1.3)
-    #convolution = scipy.ndimage.filters.gaussian_filter(signal, sigma/(bound/steps)).T
-    #pc = ax.pcolormesh(bins, bins, convolution, cmap='Greys', rasterized=True)
-    #
-    ## search kernel
-    ##x, y = ra_proj, dec_proj
-    ##delta_x = 0.01
-    ##area = delta_x**2
-    ##smoothing = 2. / 60. # Was 3 arcmin
-    ##bins = np.arange(-8., 8. + 1.e-10, delta_x)
-    ##centers = 0.5 * (bins[0: -1] + bins[1:])
-    ##yy, xx = np.meshgrid(centers, centers)
-    ##h = np.histogram2d(x, y, bins=[bins, bins])[0]
-    ##h_g = scipy.ndimage.filters.gaussian_filter(h, smoothing / delta_x)
-    ##pc = ax.pcolormesh(bins, bins, h_g.T, cmap='Greys', rasterized=True)
-    #
-    #ax.text(0.05, 0.95, 'Galaxies', transform=ax.transAxes, verticalalignment='top', bbox=props)
-    #
-    #ax.set_xlim(0.5, -0.5)
-    #ax.set_ylim(-0.5, 0.5)
-    #ax.set_xlabel(r'$\Delta \alpha_{2000}$ (deg)')
-    #ax.set_ylabel(r'$\Delta \delta_{2000}$ (deg)')
-    #
-    #divider = make_axes_locatable(ax)
-    #cax = divider.append_axes('right', size='5%', pad=0)
-    #cb = fig.colorbar(pc, cax=cax)
-    ##cb.set_label('Counts')
+    # Galactic histogram
+    ax = axs[1]
+    plt.sca(ax)
+    
+    bound = 0.5
+    steps = 100
+    bins = np.linspace(-bound, bound, steps)
+    signal = np.histogram2d(x_galaxies, y_galaxies, bins=[bins, bins])[0]
+    sigma = 0.01 * (0.25 * np.arctan(0.25 * r0 * 60. - 1.5) + 1.3)
+    convolution = scipy.ndimage.filters.gaussian_filter(signal, sigma/(bound/steps)).T
+    pc = ax.pcolormesh(bins, bins, convolution, cmap='Greys', rasterized=True)
+    
+    # search kernel
+    #x, y = ra_proj, dec_proj
+    #delta_x = 0.01
+    #area = delta_x**2
+    #smoothing = 2. / 60. # Was 3 arcmin
+    #bins = np.arange(-8., 8. + 1.e-10, delta_x)
+    #centers = 0.5 * (bins[0: -1] + bins[1:])
+    #yy, xx = np.meshgrid(centers, centers)
+    #h = np.histogram2d(x, y, bins=[bins, bins])[0]
+    #h_g = scipy.ndimage.filters.gaussian_filter(h, smoothing / delta_x)
+    #pc = ax.pcolormesh(bins, bins, h_g.T, cmap='Greys', rasterized=True)
+    
+    ax.text(0.05, 0.95, 'Galaxies', transform=ax.transAxes, verticalalignment='top', bbox=props)
+    
+    ax.set_xlim(0.5, -0.5)
+    ax.set_ylim(-0.5, 0.5)
+    ax.set_xlabel(r'$\Delta \alpha_{2000}$ (deg)')
+    ax.set_ylabel(r'$\Delta \delta_{2000}$ (deg)')
+    
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes('right', size='5%', pad=0)
+    cb = fig.colorbar(pc, cax=cax)
+    #cb.set_label('Counts')
 
     #---------------------------------------------------------------------------
     
     # Hess
-    ax = axs[1]
+    ax = axs[2]
     plt.sca(ax)
     
     xbins = np.arange(-0.3, 1.1, 0.1)
