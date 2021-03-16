@@ -99,7 +99,7 @@ class Region():
         #     choose a radius of 3 deg:
         #>>> np.sqrt((1/np.pi)*8*hp.nside2pixarea(nside=32, degrees=True))
         #2.9238630046262855
-        data = simple_adl.query_dl.query(self.survey.catalog['profile'], self.ra, self.dec, radius=3.0, gmax=self.survey.catalog['mag_max'], stars, galaxies)
+        data = simple_adl.query_dl.query(self.survey.catalog['profile'], self.ra, self.dec, radius=3.0, gmax=self.survey.catalog['mag_max'], stars=stars, galaxies=galaxies)
         self.data = data
 
     def characteristic_density(self, iso_sel):
