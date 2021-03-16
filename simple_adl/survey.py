@@ -94,12 +94,12 @@ class Region():
         self.proj = simple_adl.projector.Projector(self.ra, self.dec)
         self.pix_center = hp.ang2pix(self.nside, self.ra, self.dec, lonlat=True)
 
-    def load_data(self):
+    def load_data(self, stars=True, galaxies=False):
         # SM: to query the equivalent of hp.get_all_neighbors() for nside=32,
         #     choose a radius of 3 deg:
         #>>> np.sqrt((1/np.pi)*8*hp.nside2pixarea(nside=32, degrees=True))
         #2.9238630046262855
-        data = simple_adl.query_dl.query(self.survey.catalog['profile'], self.ra, self.dec, radius=3.0, gmax=self.survey.catalog['mag_max'])
+        data = simple_adl.query_dl.query(self.survey.catalog['profile'], self.ra, self.dec, radius=3.0, gmax=self.survey.catalog['mag_max'], stars, galaxies)
         self.data = data
 
     def characteristic_density(self, iso_sel):
