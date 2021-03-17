@@ -71,9 +71,9 @@ def query(profile, ra, dec, radius=1.0, gmax=23.5, stars=True, galaxies=False):
     '''
 
     if stars:
-        query_stars = qc.query(sql=sql_stars,fmt='structarray',timeout=300)
+        query_stars = qc.query(sql=sql_stars,fmt='structarray')
     if galaxies:
-        query_galaxies = qc.query(sql=sql_galaxies,fmt='structarray',timeout=300)
+        query_galaxies = qc.query(sql=sql_galaxies,fmt='structarray')
 
     if stars and not galaxies:
         return(query_stars)
