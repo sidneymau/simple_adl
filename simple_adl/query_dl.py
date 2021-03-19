@@ -28,46 +28,43 @@ def query(profile, ra, dec, radius=1.0, gmax=23.5, stars=True, galaxies=False):
     data : numpy recarray of data
     """
 
-    qc.set_profile(profile)
+    if profile:
+        qc.set_profile(profile)
 
     sql_stars = f'''
         SELECT ra,
                dec,
-               gmag,
-               gmag-{R_g}*ebv AS gmag_dered, -- dereddend magnitude
-               gerr,
-               rmag-{R_r}*ebv AS rmag_dered, -- dereddend magnitude
-               rmag,
-               rerr,
+               wavg_mag_psf_g as gmag,
+               wavg_mag_psf_g-{R_g}*ebv AS gmag_dered, -- dereddend magnitude
+               wavg_magerr_psf_g as gerr,
+               wavg_mag_psf_r-{R_r}*ebv AS rmag_dered, -- dereddend magnitude
+               wavg_mag_psf_r as rmag,
+               wavg_magerr_psf_r as rerr,
                ebv
-        FROM delvemc_y2t2.object 
+        FROM delve_dr1.objects
         WHERE q3c_radial_query(ra,dec,{ra},{dec},{radius})
-              AND chi < 3        -- for star-galaxy separation
-              AND prob > 0.8     -- for star-galaxy separation
-              AND abs(sharp) < 1 -- for star-galaxy separation
-              AND gmag < 90      -- for quality
-              AND rmag < 90      -- for quality
-              AND gmag < {gmax}  -- for quality
+              AND 0 <= EXTENDED_CLASS_G AND EXTENDED_CLASS_G <= 1 -- for star-galaxy separation
+              AND wavg_mag_psf_g < 90        -- for quality
+              AND wavg_mag_psf_r < 90        -- for quality
+              AND wavg_mag_psf_g < {gmax}    -- for quality
     '''
 
     sql_galaxies = f'''
         SELECT ra,
                dec,
-               gmag,
-               gmag-{R_g}*ebv AS gmag_dered, -- dereddend magnitude
-               gerr,
-               rmag-{R_r}*ebv AS rmag_dered, -- dereddend magnitude
-               rmag,
-               rerr,
+               wavg_mag_psf_g as gmag,
+               wavg_mag_psf_g-{R_g}*ebv AS gmag_dered, -- dereddend magnitude
+               wavg_magerr_psf_g as gerr,
+               wavg_mag_psf_r-{R_r}*ebv AS rmag_dered, -- dereddend magnitude
+               wavg_mag_psf_r as rmag,
+               wavg_magerr_psf_r as rerr,
                ebv
-        FROM delvemc_y2t2.object 
+        FROM delve_dr1.objects
         WHERE q3c_radial_query(ra,dec,{ra},{dec},{radius})
-              AND chi > 3        -- for star-galaxy separation
-              AND prob < 0.8     -- for star-galaxy separation
-              AND abs(sharp) > 1 -- for star-galaxy separation
-              AND gmag < 90      -- for quality
-              AND rmag < 90      -- for quality
-              AND gmag < {gmax}  -- for quality
+              AND 2 <= EXTENDED_CLASS_G   -- for star-galaxy separation
+              AND wavg_mag_psf_g < 90     -- for quality
+              AND wavg_mag_psf_r < 90     -- for quality
+              AND wavg_mag_psf_g < {gmax} -- for quality
     '''
 
     if stars:
