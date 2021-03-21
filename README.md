@@ -21,6 +21,8 @@ This will create a conda environment called `simple_adl` that includes all of th
 
 Activate the conda environment through `conda activate simple_adl`. Note that this needs to be done from a directory that does not have a `simple_adl` folder.
 
+If you cloned this directory, you will have two folders called simple_adl (ie, simple_adl/simple_adl). From the outer folder, follow the instructions below. 
+
 Run `init_simple.py` to generate a default `config.yaml` configuration file.
 This can be edited as needed; in particular, you may want to change the `profile` entry.
 
