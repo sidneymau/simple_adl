@@ -12,6 +12,8 @@ import numpy as np
 import healpy as hp
 import scipy.interpolate
 
+import fitsio as fits
+
 import simple_adl.survey
 import simple_adl.isochrone
 from simple_adl.coordinate_tools import distanceModulusToDistance, angsep
@@ -169,6 +171,10 @@ if __name__ == '__main__':
                         help='Nside of HEALPix pixelization [int]')
     parser.add_argument('--ipix',type=int,required=False,
                         help='Pixel index [int]')
+    parser.add_argument('--mod',type=float,required=False,
+                        help='Fixed distance modulus search value')
+    parser.add_argument('--mcid',type=int,required=False,
+                        help='MC SOURCE ID of satellite to inject')
     args = parser.parse_args()
 
     if args.ra and args.dec:
@@ -194,40 +200,68 @@ if __name__ == '__main__':
 
     #---------------------------------------------------------------------------
 
-    region.load_data()
+    region.load_data(stars=True, galaxies=False)
     print('Found {} objects'.format(len(region.data)))
     if (len(region.data) == 0):
         print('Ending search.')
         exit()
-
+        
     #---------------------------------------------------------------------------
 
-    distance_modulus_search_array = np.arange(16., survey.catalog['mag_max'], 0.5)
-
-    #results = [np.empty((1,9)) for distance_modulus in distance_modulus_search_array]
-
-    iso_search_array = [simple_adl.isochrone.Isochrone(survey=survey.isochrone['survey'],
-                                                       band_1=survey.band_1.lower(),
-                                                       band_2=survey.band_2.lower(),
-                                                       age=12.0, #survey.isochrone['age'],
-                                                       metallicity=0.00010, #survey.isochrone['metallicity'],
-                                                       distance_modulus=distance_modulus)
-                        for distance_modulus in distance_modulus_search_array]
-
-    iso_selection_array = [cut_isochrone_path(region.data[survey.mag_dered_1], 
-                                              region.data[survey.mag_dered_2],
-                                              region.data[survey.mag_err_1],
-                                              region.data[survey.mag_err_2],
-                                              iso,
-                                              survey.catalog['mag_max'],
-                                              radius=0.1)
-                           for iso in iso_search_array]
-
-    #data_array = [region.data[iso_sel] for iso_sel in iso_selection_array]
+    if args.mcid:
+        region.inject_satellite_sim(args.mcid)
     
-    #ra_peak_array, dec_peak_array, r_peak_array, sig_peak_array, n_obs_array, n_obs_half_array, n_model_array = [search_by_distance(survey, region, data) for data in data_array]
+    #---------------------------------------------------------------------------
 
-    results = [search_by_distance(survey, region, distance_modulus, iso_sel) for (distance_modulus,iso_sel) in zip(distance_modulus_search_array,iso_selection_array)]
+    if args.mod:
+        # Search at fixed distance modulus
+        distance_modulus_search = args.mod
+        iso_search = simple_adl.isochrone.Isochrone(survey=survey.isochrone['survey'],
+                                                    band_1=survey.band_1.lower(),
+                                                    band_2=survey.band_2.lower(),
+                                                    age=12.0, #survey.isochrone['age'],
+                                                    metallicity=0.00010, #survey.isochrone['metallicity'],
+                                                    distance_modulus=distance_modulus_search)
+        
+        iso_selection = cut_isochrone_path(region.data[survey.mag_dered_1], 
+                                           region.data[survey.mag_dered_2],
+                                           region.data[survey.mag_err_1],
+                                           region.data[survey.mag_err_2],
+                                           iso_search,
+                                           survey.catalog['mag_max'],
+                                           radius=0.1)
+                         
+        results = search_by_distance(survey, region, distance_modulus_search, iso_selection)
+        import pdb;pdb.set_trace()
+    else:
+        # Scan in distance moduli    
+        distance_modulus_search_array = np.arange(16., survey.catalog['mag_max'], 0.5)
+
+        #results = [np.empty((1,9)) for distance_modulus in distance_modulus_search_array]
+
+        iso_search_array = [simple_adl.isochrone.Isochrone(survey=survey.isochrone['survey'],
+                                                           band_1=survey.band_1.lower(),
+                                                           band_2=survey.band_2.lower(),
+                                                           age=12.0, #survey.isochrone['age'],
+                                                           metallicity=0.00010, #survey.isochrone['metallicity'],
+                                                           distance_modulus=distance_modulus)
+                            for distance_modulus in distance_modulus_search_array]
+
+        iso_selection_array = [cut_isochrone_path(region.data[survey.mag_dered_1], 
+                                                  region.data[survey.mag_dered_2],
+                                                  region.data[survey.mag_err_1],
+                                                  region.data[survey.mag_err_2],
+                                                  iso,
+                                                  survey.catalog['mag_max'],
+                                                  radius=0.1)
+                               for iso in iso_search_array]
+
+        #data_array = [region.data[iso_sel] for iso_sel in iso_selection_array]
+
+        #ra_peak_array, dec_peak_array, r_peak_array, sig_peak_array, n_obs_array, n_obs_half_array, n_model_array = [search_by_distance(survey, region, data) for data in data_array]
+
+        results = [search_by_distance(survey, region, distance_modulus, iso_sel) for (distance_modulus,iso_sel) in zip(distance_modulus_search_array,iso_selection_array)]
+                         
     ra_peak_array, dec_peak_array, r_peak_array, sig_peak_array, distance_modulus_array, n_obs_peak_array, n_obs_half_peak_array, n_model_peak_array = np.array(results).T
 
     ra_peak_array = np.concatenate(ra_peak_array)
@@ -239,7 +273,10 @@ if __name__ == '__main__':
     n_obs_half_peak_array = np.concatenate(n_obs_half_peak_array)
     n_model_peak_array = np.concatenate(n_model_peak_array)
 
-    mc_source_id_array = np.zeros(len(distance_modulus_array))
+    if args.mcid:
+        mc_source_id_array = np.full_like(distance_modulus_array, args.mcid)
+    else:
+        mc_source_id_array = np.zeros(len(distance_modulus_array))
     
     # Sort peaks according to significance
     index_sort = np.argsort(sig_peak_array)[::-1]

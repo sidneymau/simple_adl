@@ -13,7 +13,11 @@ import scipy.stats
 import scipy.interpolate
 import scipy.ndimage
 
-import simple_adl.query_dl
+import fitsio as fits
+
+from lsst.rsp import get_tap_service
+
+import simple_adl.query_TAP
 import simple_adl.projector
 
 #-------------------------------------------------------------------------------
@@ -44,6 +48,32 @@ def subpixel(superpix, nside_superpix, nside_subpix):
     # Might be able to speed up array indexing...
     return(subpix[pix_for_subpix == superpix])
 
+def get_catalog_file(catalog_dir, mc_source_id):
+    """
+    Inputs:
+        catalog_dir = string corresponding to directory containing the stellar catalog infiles
+        mc_source_id = integer corresponding the target MC_SOURCE_ID value
+    Outputs:
+        catalog_infile = string corresponding to filename of stellar catalog containing mc_source_id
+    """
+    catalog_infiles = sorted(glob.glob(catalog_dir + '/*catalog*.fits'))
+    mc_source_id_array = []
+    catalog_infile_index_array = []
+    for ii, catalog_infile in enumerate(catalog_infiles):
+        mc_source_id_min = int(os.path.basename(catalog_infile).split('.')[0].split('mc_source_id_')[-1].split('-')[0])
+        mc_source_id_max = int(os.path.basename(catalog_infile).split('.')[0].split('mc_source_id_')[-1].split('-')[1])
+        assert (mc_source_id_max > mc_source_id_min) & (mc_source_id_min >= 1), 'Found invalue MC_SOURCE_ID values in filenames'
+        mc_source_id_array.append(np.arange(mc_source_id_min, mc_source_id_max + 1))
+        catalog_infile_index_array.append(np.tile(ii, 1 + (mc_source_id_max - mc_source_id_min)))
+
+    mc_source_id_array = np.concatenate(mc_source_id_array)
+    catalog_infile_index_array = np.concatenate(catalog_infile_index_array)
+
+    assert len(mc_source_id_array) == len(np.unique(mc_source_id_array)), 'Found non-unique MC_SOURCE_ID values in filenames'
+    assert np.in1d(mc_source_id, mc_source_id_array), 'Requested MC_SOURCE_ID value not among files'
+    mc_source_id_index = np.nonzero(mc_source_id == mc_source_id_array)[0][0] # second [0] added by smau 7/23/18 to fix incompatiable type bug
+    return catalog_infiles[catalog_infile_index_array[mc_source_id_index]]
+
 #-------------------------------------------------------------------------------
 
 class Survey():
@@ -59,6 +89,7 @@ class Survey():
         self.mag_dered_2 = self.catalog['mag_dered'].format(self.band_2)
         self.mag_err_1 = self.catalog['mag_err'].format(self.band_1)
         self.mag_err_2 = self.catalog['mag_err'].format(self.band_2)
+        self.sim_dir = self.survey['sim_dir']
 
         self.load_fracdet
 
@@ -99,8 +130,42 @@ class Region():
         #     choose a radius of 3 deg:
         #>>> np.sqrt((1/np.pi)*8*hp.nside2pixarea(nside=32, degrees=True))
         #2.9238630046262855
-        data = simple_adl.query_dl.query(self.survey.catalog['profile'], self.ra, self.dec, radius=3.0, gmax=self.survey.catalog['mag_max'], stars=stars, galaxies=galaxies)
+
+        # Get an instance of the TAP service
+        service = get_tap_service()
+        assert service is not None
+        assert service.baseurl == "https://data.lsst.cloud/api/tap"
+        data = simple_adl.query_TAP.query(service, self.ra, self.dec, radius=1.0, gmax=self.survey.catalog['mag_max'], stars=stars, galaxies=galaxies)
         self.data = data
+    
+    def load_satellite_sim(self, mc_source_id):
+        """
+        Load info for injecting satellite sims
+        """
+        # self.population_file = population_file
+        # self.catalog_file = catalog_file
+        
+        data_array = []
+        cat_file = get_catalog_file(self.survey.sim_dir, mc_source_id)
+        cat_data = fits.read(cat_file, ext=1)
+        # pix = hp.ang2pix(nside,cat_data[basis_1], cat_data[basis_2], lonlat=True)
+        # pix_data = cat_data[np.in1d(pix, pix_nside_neighbors)]
+        # data_array.append(pix_data)
+        # data = np.concatenate(data_array)
+        
+        return cat_data
+    
+    def inject_satellite_sim(self, mc_source_id):
+        """
+        Inject satellite simulation
+        """
+        
+        sim_data = self.load_satellite_sim(mc_source_id)
+        self.sim_data = sim_data
+        import pdb;pdb.set_trace()
+        self.combined_data = np.concatenate([self.data, self.sim_data])
+        
+        # FIXME -- what were we doing before?
 
     def characteristic_density(self, iso_sel):
         """
