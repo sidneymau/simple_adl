@@ -200,16 +200,18 @@ if __name__ == '__main__':
 
     #---------------------------------------------------------------------------
 
-    region.load_data(stars=True, galaxies=False)
+    if args.mcid:
+        data = region.inject_satellite_sim(args.mcid)
+    else:
+        data = region.load_data(stars=True, galaxies=False)
+    
+    region.data = data
+    
+    # region.load_data(stars=True, galaxies=False)
     print('Found {} objects'.format(len(region.data)))
     if (len(region.data) == 0):
         print('Ending search.')
         exit()
-        
-    #---------------------------------------------------------------------------
-
-    if args.mcid:
-        region.inject_satellite_sim(args.mcid)
     
     #---------------------------------------------------------------------------
 
@@ -232,7 +234,6 @@ if __name__ == '__main__':
                                            radius=0.1)
                          
         results = search_by_distance(survey, region, distance_modulus_search, iso_selection)
-        import pdb;pdb.set_trace()
     else:
         # Scan in distance moduli    
         distance_modulus_search_array = np.arange(16., survey.catalog['mag_max'], 0.5)
@@ -262,16 +263,16 @@ if __name__ == '__main__':
 
         results = [search_by_distance(survey, region, distance_modulus, iso_sel) for (distance_modulus,iso_sel) in zip(distance_modulus_search_array,iso_selection_array)]
                          
-    ra_peak_array, dec_peak_array, r_peak_array, sig_peak_array, distance_modulus_array, n_obs_peak_array, n_obs_half_peak_array, n_model_peak_array = np.array(results).T
+    ra_peak_array, dec_peak_array, r_peak_array, sig_peak_array, distance_modulus_array, n_obs_peak_array, n_obs_half_peak_array, n_model_peak_array = np.asarray(results)
 
-    ra_peak_array = np.concatenate(ra_peak_array)
-    dec_peak_array = np.concatenate(dec_peak_array)
-    r_peak_array = np.concatenate(r_peak_array)
-    sig_peak_array = np.concatenate(sig_peak_array)
-    distance_modulus_array = np.concatenate(distance_modulus_array)
-    n_obs_peak_array = np.concatenate(n_obs_peak_array)
-    n_obs_half_peak_array = np.concatenate(n_obs_half_peak_array)
-    n_model_peak_array = np.concatenate(n_model_peak_array)
+    # ra_peak_array = np.concatenate(ra_peak_array)
+    # dec_peak_array = np.concatenate(dec_peak_array)
+    # r_peak_array = np.concatenate(r_peak_array)
+    # sig_peak_array = np.concatenate(sig_peak_array)
+    # distance_modulus_array = np.concatenate(distance_modulus_array)
+    # n_obs_peak_array = np.concatenate(n_obs_peak_array)
+    # n_obs_half_peak_array = np.concatenate(n_obs_half_peak_array)
+    # n_model_peak_array = np.concatenate(n_model_peak_array)
 
     if args.mcid:
         mc_source_id_array = np.full_like(distance_modulus_array, args.mcid)

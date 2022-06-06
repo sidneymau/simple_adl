@@ -8,6 +8,7 @@ import glob
 import os
 
 import numpy as np
+import pandas as pd
 import healpy as hp
 import scipy.stats
 import scipy.interpolate
@@ -136,7 +137,8 @@ class Region():
         assert service is not None
         assert service.baseurl == "https://data.lsst.cloud/api/tap"
         data = simple_adl.query_TAP.query(service, self.ra, self.dec, radius=1.0, gmax=self.survey.catalog['mag_max'], stars=stars, galaxies=galaxies)
-        self.data = data
+        # self.data = data
+        return data
     
     def load_satellite_sim(self, mc_source_id):
         """
@@ -161,11 +163,13 @@ class Region():
         """
         
         sim_data = self.load_satellite_sim(mc_source_id)
-        self.sim_data = sim_data
-        import pdb;pdb.set_trace()
-        self.combined_data = np.concatenate([self.data, self.sim_data])
+        # self.sim_data = sim_data
+        # self.combined_data = np.concatenate([self.data, self.sim_data])
+        real_data = self.load_data(stars=True, galaxies=False)
+        sim_data = self.load_satellite_sim(mc_source_id)
+        merged_data = real_data[real_data.columns[:-1]].append(pd.DataFrame(sim_data[real_data.columns[:-1]]))  # pd.Dataframe
         
-        # FIXME -- what were we doing before?
+        return merged_data
 
     def characteristic_density(self, iso_sel):
         """
