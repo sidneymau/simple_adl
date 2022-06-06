@@ -135,7 +135,7 @@ class Region():
         # Get an instance of the TAP service
         service = get_tap_service()
         assert service is not None
-        assert service.baseurl == "https://data.lsst.cloud/api/tap"
+        # assert service.baseurl == "https://data.lsst.cloud/api/tap"
         data = simple_adl.query_TAP.query(service, self.ra, self.dec, radius=1.0, gmax=self.survey.catalog['mag_max'], stars=stars, galaxies=galaxies)
         # self.data = data
         return data
