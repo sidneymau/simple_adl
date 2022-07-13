@@ -90,7 +90,6 @@ class Survey():
         self.mag_dered_2 = self.catalog['mag_dered'].format(self.band_2)
         self.mag_err_1 = self.catalog['mag_err'].format(self.band_1)
         self.mag_err_2 = self.catalog['mag_err'].format(self.band_2)
-        self.sim_dir = self.survey['sim_dir']
 
         self.load_fracdet
 

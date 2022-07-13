@@ -78,9 +78,9 @@ def cut_isochrone_path(g, r, g_err, r_err, isochrone, mag_max, radius=0.1, retur
     else:
         return cut
 
-def write_output(results_dir, nside, pix_nside_select, ra_peak_array, dec_peak_array, r_peak_array, distance_modulus_array, 
-                n_obs_peak_array, n_obs_half_peak_array, n_model_peak_array, 
-                sig_peak_array, mc_source_id_array, mode, outfile):
+def write_output(results_dir, nside, pix_nside_select, best_ra_peak, best_dec_peak, best_r_peak, best_distance_modulus, 
+                n_obs_peak, n_obs_half_peak, n_model_peak, 
+                best_sig_peak, mc_source_id, mode, outfile):
     #writer = open(outfile, 'a') # append if exists
     #for ii in range(0, len(sig_peak_array)):
     #    # SIG, RA, DEC, MODULUS, r, n_obs, n_model, mc_source_id
@@ -93,11 +93,20 @@ def write_output(results_dir, nside, pix_nside_select, ra_peak_array, dec_peak_a
     #                                                                                                                     n_obs_half_peak_array[ii],
     #                                                                                                                     n_model_peak_array[ii],
     #                                                                                                                     mc_source_id_array[ii]))
-    data = [tuple(row) for row in np.stack([sig_peak_array, ra_peak_array, dec_peak_array, distance_modulus_array, r_peak_array, n_obs_peak_array, n_obs_half_peak_array, n_model_peak_array, mc_source_id_array], axis=-1)]
-    arr = np.array(data, dtype=[('SIG', float), ('RA', float), ('DEC', float), ('MODULUS', float), ('R', float), ('N_OBS', float), ('N_OBS_HALF', float), ('N_MODEL', float), ('MC_SOURCE_ID', int)])
+    #data = [tuple(row) for row in np.stack([sig_peak_array, ra_peak_array, dec_peak_array, distance_modulus_array, r_peak_array, n_obs_peak_array, n_obs_half_peak_array, n_model_peak_array, mc_source_id_array], axis=-1)]
+    #arr = np.array(data, dtype=[('SIG', float), ('RA', float), ('DEC', float), ('MODULUS', float), ('R', float), ('N_OBS', float), ('N_OBS_HALF', float ('N_MODEL', float), ('MC_SOURCE_ID', int))])
     #np.save(outfile, arr)
+    #f = open(os.path.join(results_dir,outfile), 'ab')
+    #np.savetxt(f, arr, delimiter=',')
+    #f.close()
+    
+    #saving only the best
+    data = np.array([best_sig_peak, best_ra_peak, best_dec_peak, best_distance_modulus, best_r_peak, n_obs_peak, n_obs_half_peak, n_model_peak, mc_source_id]) 
     f = open(os.path.join(results_dir,outfile), 'ab')
-    np.savetxt(f, arr, delimiter=',')
+    if os.stat(os.path.join(results_dir,outfile)).st_size == 0:
+        np.savetxt(f, [data], fmt="%.2f", delimiter=',', header="SIG, RA, DEC, MODULUS, R, N_OBS, N_OBS_HALF, N_MODEL, MC_SOURCE_ID ", comments="")
+    else:
+         np.savetxt(f, [data], fmt="%.2f", delimiter=',')
     f.close()
 
 def search_by_distance(survey, region, distance_modulus, iso_sel):
@@ -142,15 +151,18 @@ def search_by_distance(survey, region, distance_modulus, iso_sel):
         n_obs_peak_array.append(n_obs_peaks)
         n_obs_half_peak_array.append(n_obs_half_peaks)
         n_model_peak_array.append(n_model_peaks)
-
-    ra_peak_array = np.concatenate(ra_peak_array)
-    dec_peak_array = np.concatenate(dec_peak_array)
-    r_peak_array = np.concatenate(r_peak_array)
-    sig_peak_array = np.concatenate(sig_peak_array)
-    distance_modulus_array = np.concatenate(distance_modulus_array)
-    n_obs_peak_array = np.concatenate(n_obs_peak_array)
-    n_obs_half_peak_array = np.concatenate(n_obs_half_peak_array)
-    n_model_peak_array = np.concatenate(n_model_peak_array)
+        
+    try:
+        ra_peak_array = np.concatenate(ra_peak_array)
+        dec_peak_array = np.concatenate(dec_peak_array)
+        r_peak_array = np.concatenate(r_peak_array)
+        sig_peak_array = np.concatenate(sig_peak_array)
+        distance_modulus_array = np.concatenate(distance_modulus_array)
+        n_obs_peak_array = np.concatenate(n_obs_peak_array)
+        n_obs_half_peak_array = np.concatenate(n_obs_half_peak_array)
+        n_model_peak_array = np.concatenate(n_model_peak_array)
+    except ValueError:
+        print('No arrays to concatenate')
 
     return ra_peak_array, dec_peak_array, r_peak_array, sig_peak_array, distance_modulus_array, n_obs_peak_array, n_obs_half_peak_array, n_model_peak_array
 
