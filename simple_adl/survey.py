@@ -21,6 +21,9 @@ from lsst.rsp import get_tap_service
 import simple_adl.query_TAP
 import simple_adl.projector
 
+from IPython.core.debugger import set_trace
+import matplotlib.pyplot as plt
+
 #-------------------------------------------------------------------------------
 
 # From https://github.com/DarkEnergySurvey/ugali/blob/master/ugali/utils/healpix.py
@@ -173,11 +176,11 @@ class Region():
     def characteristic_density(self, iso_sel):
         """
         Compute the characteristic density of a region
-        Convlve the field and find overdensity peaks
+        Convolve the field and find overdensity peaks
         """
 
         x, y = self.proj.sphereToImage(self.data[self.survey.catalog['basis_1']][iso_sel], self.data[self.survey.catalog['basis_2']][iso_sel]) # Trimmed magnitude range for hotspot finding
-        #x_full, y_full = proj.sphereToImage(data[basis_1], data[basis_2]) # If we want to use full magnitude range for significance evaluation
+        #x, y = self.proj.sphereToImage(self.data[self.survey.catalog['basis_1']], self.data[self.survey.catalog['basis_2']]) # If we want to use full magnitude range for significance evaluation (used to be x_full, y_full = proj.sphereToImage(data[basis_1], data[basis_2])
         delta_x = 0.01
         area = delta_x**2
         smoothing = 2. / 60. # Was 3 arcmin
@@ -241,7 +244,7 @@ class Region():
         characteristic_density = self.density
     
         x, y = self.proj.sphereToImage(self.data[self.survey.catalog['basis_1']][iso_sel], self.data[self.survey.catalog['basis_2']][iso_sel]) # Trimmed magnitude range for hotspot finding
-        #x_full, y_full = proj.sphereToImage(data[basis_1], data[basis_2]) # If we want to use full magnitude range for significance evaluation
+        #x, y = self.proj.sphereToImage(self.data[self.survey.catalog['basis_1']], self.data[self.survey.catalog['basis_2']]) # If we want to use full magnitude range for significance evaluation
     
         # If fracdet map is available, use that information to either compute local density,
         # or in regions of spotty coverage, use the typical density of the region
@@ -320,7 +323,7 @@ class Region():
         characteristic_density = self.density
     
         x, y = self.proj.sphereToImage(self.data[self.survey.catalog['basis_1']][iso_sel], self.data[self.survey.catalog['basis_2']][iso_sel]) # Trimmed magnitude range for hotspot finding
-        #x_full, y_full = proj.sphereToImage(data[basis_1], data[basis_2]) # If we want to use full magnitude range for significance evaluation
+        #x, y = self.proj.sphereToImage(self.data[self.survey.catalog['basis_1']], self.data[self.survey.catalog['basis_2']]) # If we want to use full magnitude range for significance evaluation
         delta_x = 0.01
         area = delta_x**2
         smoothing = 2. / 60. # Was 3 arcmin
@@ -406,6 +409,7 @@ class Region():
         #    n_model_array[ii] = n_model
         n_obs_array = np.array([np.sum(angsep_peak < size) for size in size_array])
         n_model_array = np.array([characteristic_density_local * (np.pi * size**2) for size in size_array])
+
         sig_array = np.array([np.clip(scipy.stats.norm.isf(scipy.stats.poisson.sf(n_obs, n_model)), 0., 37.5) for (n_obs,n_model) in zip(n_obs_array,n_model_array)])
     
         ra_peak, dec_peak = self.proj.imageToSphere(x_peak, y_peak)
@@ -430,3 +434,30 @@ class Region():
         n_model_peak_array.append(n_model_peak)
     
         return ra_peak_array, dec_peak_array, r_peak_array, sig_peak_array, n_obs_peak_array, n_obs_half_peak_array, n_model_peak_array
+
+    def plot_cmd(self, iso_sel):
+        """Plot a color magnitude diagram.
+
+        data: DataFrame with photometry data
+        """
+        data = self.data
+        y = data['mag_g']  
+        x = data['mag_g'] - data['mag_r']
+
+        xlims = [-1, 1.5]  #need to find better way to restrict axes
+        ylims = [16,28]
+        
+        fig, axs = plt.subplots(1,1)
+        axs.set_xlim(xlims); 
+        axs.set_ylim(ylims); 
+
+        axs.set_ylabel('$Magnitude (g)$')
+        axs.set_xlabel('$Color (g-r)$')
+
+        axs.plot(x, y, 'ko', markersize=0.3, alpha=0.3)
+        axs.invert_yaxis()
+
+
+        plt.show()
+
+        return
