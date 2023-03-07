@@ -196,8 +196,8 @@ if __name__ == '__main__':
     
     ax.set_xlim(-0.3, 1.0)
     ax.set_ylim(24.0, 16.0)
-    ax.set_xlabel(r'${} - {}$.format(survey.band_1.lower(), survey.band_2.lower()) (mag)')
-    ax.set_ylabel(r'${}$.format(survey.band_1.lower()) (mag)')
+    ax.set_xlabel(r'${} - {}$ (mag)'.format(survey.band_1.lower(), survey.band_2.lower()))
+    ax.set_ylabel(r'${}$ (mag)'.format(survey.band_1.lower()))
     
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0)
