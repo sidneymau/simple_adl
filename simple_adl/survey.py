@@ -378,7 +378,7 @@ class Region():
         
         return x_peak_array, y_peak_array, angsep_peak_array
     
-    def fit_aperture(self, iso_sel, x_peak, y_peak, angsep_peak):
+    def fit_aperture(self, iso_sel, x_peak, y_peak, angsep_peak, extension=None):
         """
         Fit aperture by varing radius and computing the significance
         """
@@ -393,7 +393,12 @@ class Region():
         n_obs_half_peak_array = []
         n_model_peak_array = []
     
-        size_array = np.arange(0.01, 0.3, 0.01)
+        
+        if extension is not None:
+            size_array = extension
+        else:
+            size_array = np.arange(0.01, 0.3, 0.01)
+            
         sig_array = np.zeros(len(size_array))
         
         size_array_zero = np.concatenate([[0.], size_array])

@@ -110,7 +110,7 @@ def write_output(results_dir, nside, pix_nside_select, best_ra_peak, best_dec_pe
          np.savetxt(f, [data], fmt="%.2f", delimiter=',')
     f.close()
 
-def search_by_distance(survey, region, distance_modulus, iso_sel):
+def search_by_distance(survey, region, distance_modulus, iso_sel, extension=None):
     """
     Idea: 
     Send a data extension that goes to faint magnitudes, e.g., g < 24.
@@ -136,13 +136,13 @@ def search_by_distance(survey, region, distance_modulus, iso_sel):
     n_obs_half_peak_array = []
     n_model_peak_array = []
 
-    region.density = region.characteristic_density(iso_sel) #MAG CUT IN HERE
-    x_peak_array, y_peak_array, angsep_peak_array = region.find_peaks(iso_sel)  #MAG CUT IN HERE
+    region.density = region.characteristic_density(iso_sel)
+    x_peak_array, y_peak_array, angsep_peak_array = region.find_peaks(iso_sel)
 
     for x_peak, y_peak, angsep_peak in zip(x_peak_array, y_peak_array, angsep_peak_array):
         # Aperture fitting
         print('Fitting aperture to hotspot...')
-        ra_peaks, dec_peaks, r_peaks, sig_peaks, n_obs_peaks, n_obs_half_peaks, n_model_peaks = region.fit_aperture(iso_sel, x_peak, y_peak, angsep_peak)   #MAG CUT IN HERE
+        ra_peaks, dec_peaks, r_peaks, sig_peaks, n_obs_peaks, n_obs_half_peaks, n_model_peaks = region.fit_aperture(iso_sel, x_peak, y_peak, angsep_peak, extension)
         
         ra_peak_array.append(ra_peaks)
         dec_peak_array.append(dec_peaks)
