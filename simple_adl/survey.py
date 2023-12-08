@@ -438,7 +438,7 @@ class Region():
         n_obs_half_peak_array.append(n_obs_half_peak)
         n_model_peak_array.append(n_model_peak)
     
-        return ra_peak_array, dec_peak_array, r_peak_array, sig_peak_array, n_obs_peak_array, n_obs_half_peak_array, n_model_peak_array
+        return ra_peak_array, dec_peak_array, r_peak_array, sig_peak_array, n_obs_peak_array, n_obs_half_peak_array, n_model_peak_array, characteristic_density_local
 
     def plot_cmd(self, iso_sel):
         """Plot a color magnitude diagram.
