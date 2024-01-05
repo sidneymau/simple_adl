@@ -23,6 +23,6 @@ output:
   save_dir: plot_dir
 survey:
   fracdet: null
-  name: des
-  sim_dir: /project/shared/data/satsim/lsst_dc2_v3/
+  name: lsst
+  sim_dir: /project/shared/data/satsim/lsst_dc2_v6/
 
